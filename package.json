@@ -32,7 +32,7 @@
   "scripts": {
     "build": "npm run clean && npm run lint && tsc && npm link",
     "clean": "rimraf ./dist",
-    "homebridge": "matterbridge -bridge",
+    "matterbridge": "matterbridge -bridge",
     "lint": "eslint src/**/*.ts --max-warnings=0",
     "lint-fix": "eslint src/**/*.ts --max-warnings=0 --fix",
     "prepublishOnly": "npm run build"

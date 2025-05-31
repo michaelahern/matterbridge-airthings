@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22",
   "onCreateCommand": {
-    "homebridge-install": "sudo npm install -g matterbridge"
+    "matterbridge-install": "sudo npm install -g matterbridge"
   },
   "updateContentCommand": {
     "npm-install": "npm install"
