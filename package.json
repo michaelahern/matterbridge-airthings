@@ -2,7 +2,7 @@
   "name": "matterbridge-airthings",
   "displayName": "Matterbridge Airthings",
   "version": "0.1.0",
-  "description": "A Matterbridge plugin for Airthings air quality monitors via the Airthings Consumer API.",
+  "description": "Airthings Matterbridge Plugin",
   "keywords": [
     "airthings",
     "matterbridge"
@@ -30,8 +30,9 @@
     "url": "git://github.com/michaelahern/matterbridge-airthings.git"
   },
   "scripts": {
-    "build": "npm run clean && npm run lint && tsc && npm link",
+    "build": "npm run clean && npm run lint && tsc",
     "clean": "rimraf ./dist",
+    "link": "npm link && npm link matterbridge",
     "matterbridge": "matterbridge -bridge",
     "lint": "eslint src/**/*.ts --max-warnings=0",
     "lint-fix": "eslint src/**/*.ts --max-warnings=0 --fix",
@@ -44,7 +45,6 @@
     "@stylistic/eslint-plugin": "^4",
     "@types/node": "^20",
     "eslint": "^9",
-    "matterbridge": "^3.0.4",
     "rimraf": "^6",
     "typescript": "~5.8",
     "typescript-eslint": "^8"
