@@ -37,8 +37,8 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         for (const device of devicesResponse.devices) {
             const deviceSensors = sensorsResponse.results.find(r => r.serialNumber === device.serialNumber);
 
-            if (!deviceSensors) {
-                this.log.warn(`No sensors found for device ${device.name} (${device.serialNumber})!`);
+            if (!deviceSensors || !deviceSensors.recorded) {
+                this.log.warn(`No active sensors found for device ${device.name} (${device.serialNumber})!`);
                 continue;
             }
 
@@ -110,6 +110,12 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     const airQualityEndpoint = endpoint.getChildEndpointByName('AirQuality');
                     if (airQualityEndpoint) {
                         await airQualityEndpoint.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
+                        if (temp !== undefined) {
+                            await airQualityEndpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
+                        }
+                        if (humidity !== undefined) {
+                            await airQualityEndpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                        }
                     }
                 }
             }
