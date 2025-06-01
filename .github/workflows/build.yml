@@ -17,5 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
+      - run: npm install -g matterbridge
       - run: npm ci
+      - run: npm link matterbridge
       - run: npm run build

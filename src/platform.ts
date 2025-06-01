@@ -1,12 +1,12 @@
 import { AirthingsClient, SensorUnits } from 'airthings-consumer-api';
-import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
+import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, bridgedNode, humiditySensor, powerSource, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
-import { RelativeHumidityMeasurement, TemperatureMeasurement } from 'matterbridge/matter/clusters';
+import { PowerSource, RelativeHumidityMeasurement, TemperatureMeasurement } from 'matterbridge/matter/clusters';
 
 export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     airthingsClient: AirthingsClient;
     bridgedDevices = new Map<string, MatterbridgeEndpoint>();
-    sensorInterval: NodeJS.Timeout | undefined;
+    refreshSensorsInterval: NodeJS.Timeout | undefined;
 
     constructor(matterbridge: Matterbridge, log: AnsiLogger, config: PlatformConfig) {
         super(matterbridge, log, config);
@@ -27,7 +27,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     }
 
     override async onStart(reason?: string) {
-        this.log.info('[onStart] ', reason ?? '');
+        this.log.info('[onStart]', reason);
 
         await this.ready;
         await this.clearSelect();
@@ -45,7 +45,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
             const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity')?.value;
 
-            const endpoint = new MatterbridgeEndpoint([temperatureSensor, humiditySensor, bridgedNode], { uniqueStorageKey: 'Airthings' }, this.config.debug as boolean)
+            const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource, temperatureSensor, humiditySensor], { uniqueStorageKey: 'Airthings' }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
                     device.name,
                     device.serialNumber,
@@ -57,7 +57,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     parseInt(this.matterbridge.matterbridgeVersion.replace(/\D/g, '')),
                     this.matterbridge.matterbridgeVersion
                 )
-                .addRequiredClusterServers()
+                .createDefaultPowerSourceReplaceableBatteryClusterServer(deviceSensors.batteryPercentage, PowerSource.BatChargeLevel.Ok, 9000, 'AA', 6)
                 .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : null)
                 .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : null);
 
@@ -78,6 +78,11 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                 if (endpoint) {
                     this.log.debug(`Refreshing sensors for ${device.serialNumber}:`, device);
 
+                    const batteryPercentage = device.batteryPercentage;
+                    if (batteryPercentage) {
+                        await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage, endpoint.log);
+                    }
+
                     const temp = device.sensors.find(s => s.sensorType === 'temp')?.value;
                     if (temp) {
                         await endpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
@@ -92,14 +97,14 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         };
 
         refreshSensors();
-        this.sensorInterval = setInterval(refreshSensors, 120 * 1000);
+        this.refreshSensorsInterval = setInterval(refreshSensors, 120 * 1000);
     }
 
     override async onShutdown(reason?: string) {
-        clearInterval(this.sensorInterval);
+        clearInterval(this.refreshSensorsInterval);
 
         await super.onShutdown(reason);
-        this.log.info('[onShutdown]', reason ?? 'none');
+        this.log.info('[onShutdown]', reason);
 
         if (this.config.unregisterOnShutdown === true) {
             await this.unregisterAllDevices(500);

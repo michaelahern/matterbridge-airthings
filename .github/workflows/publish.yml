@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: 24.x
           registry-url: https://registry.npmjs.org/
+      - run: npm install -g matterbridge
       - run: npm ci
+      - run: npm link matterbridge
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
