@@ -2,7 +2,9 @@
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22",
   "updateContentCommand": {
     "matterbridge-install": "npm install -g matterbridge",
-    "npm-install": "npm install",
+    "npm-install": "npm install"
+  },
+  "postStartCommand": {
     "npm-link": "npm run link"
   },
   "portsAttributes": {
