@@ -1,7 +1,7 @@
 import { AirthingsClient, SensorResult, SensorUnits } from 'airthings-consumer-api';
 import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, airQualitySensor, bridgedNode, humiditySensor, powerSource, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
-import { AirQuality, PowerSource, RelativeHumidityMeasurement, TemperatureMeasurement } from 'matterbridge/matter/clusters';
+import { AirQuality, CarbonDioxideConcentrationMeasurement, ConcentrationMeasurement, Pm25ConcentrationMeasurement, PowerSource, RelativeHumidityMeasurement, TemperatureMeasurement, TotalVolatileOrganicCompoundsConcentrationMeasurement } from 'matterbridge/matter/clusters';
 
 export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     airthingsClient: AirthingsClient;
@@ -48,6 +48,9 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const battery = deviceSensors.batteryPercentage;
             const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
             const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity')?.value;
+            const co2 = deviceSensors.sensors.find(s => s.sensorType === 'co2')?.value;
+            const pm25 = deviceSensors.sensors.find(s => s.sensorType === 'pm25')?.value;
+            const voc = deviceSensors.sensors.find(s => s.sensorType === 'voc')?.value;
 
             const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
@@ -76,6 +79,9 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                 .createDefaultAirQualityClusterServer(this.#getAirQuality(deviceSensors))
                 .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
                 .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined)
+                .createDefaultCarbonDioxideConcentrationMeasurementClusterServer(co2, ConcentrationMeasurement.MeasurementUnit.Ppm, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultPm25ConcentrationMeasurementClusterServer(pm25, ConcentrationMeasurement.MeasurementUnit.Mgm3, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultTvocMeasurementClusterServer(voc, ConcentrationMeasurement.MeasurementUnit.Ppb, ConcentrationMeasurement.MeasurementMedium.Air)
                 .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
@@ -119,6 +125,21 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     }
                     if (humidity !== undefined) {
                         await airQualityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                    }
+
+                    const co2 = device.sensors.find(s => s.sensorType === 'co2')?.value;
+                    if (co2 !== undefined) {
+                        await airQualityEndpoint?.setAttribute(CarbonDioxideConcentrationMeasurement.Cluster.id, 'measuredValue', co2, endpoint.log);
+                    }
+
+                    const pm25 = device.sensors.find(s => s.sensorType === 'pm25')?.value;
+                    if (pm25 !== undefined) {
+                        await airQualityEndpoint?.setAttribute(Pm25ConcentrationMeasurement.Cluster.id, 'measuredValue', pm25, endpoint.log);
+                    }
+
+                    const voc = device.sensors.find(s => s.sensorType === 'voc')?.value;
+                    if (voc !== undefined) {
+                        await airQualityEndpoint?.setAttribute(TotalVolatileOrganicCompoundsConcentrationMeasurement.Cluster.id, 'measuredValue', voc, endpoint.log);
                     }
                 }
             }
