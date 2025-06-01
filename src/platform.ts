@@ -85,7 +85,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                 .createDefaultPm1ConcentrationMeasurementClusterServer(pm1, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
                 .createDefaultPm25ConcentrationMeasurementClusterServer(pm25, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
                 .createDefaultRadonConcentrationMeasurementClusterServer(radon, ConcentrationMeasurement.MeasurementUnit.Bqm3, ConcentrationMeasurement.MeasurementMedium.Air)
-                .createDefaultTvocMeasurementClusterServer(voc, ConcentrationMeasurement.MeasurementUnit.Ppb, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultTvocMeasurementClusterServer(voc ? Math.round(voc * 2.2727) : undefined, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
                 .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
@@ -153,7 +153,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
                     const voc = device.sensors.find(s => s.sensorType === 'voc')?.value;
                     if (voc !== undefined) {
-                        await airQualityEndpoint?.setAttribute(TotalVolatileOrganicCompoundsConcentrationMeasurement.Cluster.id, 'measuredValue', voc, endpoint.log);
+                        await airQualityEndpoint?.setAttribute(TotalVolatileOrganicCompoundsConcentrationMeasurement.Cluster.id, 'measuredValue', Math.round(voc * 2.2727), endpoint.log);
                     }
                 }
             }

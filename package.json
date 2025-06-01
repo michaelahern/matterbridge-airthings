@@ -1,10 +1,12 @@
 {
   "name": "matterbridge-airthings",
   "displayName": "Matterbridge Airthings",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Airthings Matterbridge Plugin",
   "keywords": [
     "airthings",
+    "matter",
+    "matter.js",
     "matterbridge"
   ],
   "homepage": "https://github.com/michaelahern/matterbridge-airthings",
