@@ -73,7 +73,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
         const refreshSensors = async () => {
             const airthingsSensors = await this.airthingsClient.getSensors(SensorUnits.Metric);
-            airthingsSensors.results.forEach(async (device) => {
+            for (const device of airthingsSensors.results) {
                 const endpoint = this.bridgedDevices.get(device.serialNumber);
                 if (endpoint) {
                     this.log.debug(`Refreshing sensors for ${device.serialNumber}:`, device);
