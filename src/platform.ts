@@ -71,6 +71,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
             endpoint.addChildDeviceType('AirQuality', airQualitySensor)
                 .createDefaultAirQualityClusterServer(this.#getAirQuality(deviceSensors))
+                .addClusterServers([TemperatureMeasurement.Cluster.id, RelativeHumidityMeasurement.Cluster.id])
                 .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
@@ -96,26 +97,24 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     }
 
                     const temp = device.sensors.find(s => s.sensorType === 'temp')?.value;
-                    const tempEndpoint = endpoint.getChildEndpointByName('Temperature');
-                    if (temp !== undefined && tempEndpoint) {
-                        await tempEndpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
+                    if (temp !== undefined) {
+                        const tempEndpoint = endpoint.getChildEndpointByName('Temperature');
+                        await tempEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
                     }
 
                     const humidity = device.sensors.find(s => s.sensorType === 'humidity')?.value;
-                    const humidityEndpoint = endpoint.getChildEndpointByName('Humidity');
-                    if (humidity !== undefined && humidityEndpoint) {
-                        await humidityEndpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                    if (humidity !== undefined) {
+                        const humidityEndpoint = endpoint.getChildEndpointByName('Humidity');
+                        await humidityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
                     }
 
                     const airQualityEndpoint = endpoint.getChildEndpointByName('AirQuality');
-                    if (airQualityEndpoint) {
-                        await airQualityEndpoint.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
-                        if (temp !== undefined) {
-                            await airQualityEndpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
-                        }
-                        if (humidity !== undefined) {
-                            await airQualityEndpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
-                        }
+                    await airQualityEndpoint?.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
+                    if (temp !== undefined) {
+                        await airQualityEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
+                    }
+                    if (humidity !== undefined) {
+                        await airQualityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
                     }
                 }
             }
