@@ -64,7 +64,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
             await this.registerDevice(endpoint);
             this.bridgedDevices.set(device.serialNumber, endpoint);
-        });
+        }
     }
 
     override async onConfigure() {
@@ -93,7 +93,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                         await endpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
                     }
                 }
-            });
+            }
         };
 
         refreshSensors();
