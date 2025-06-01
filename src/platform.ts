@@ -34,12 +34,12 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
         const devicesResponse = await this.airthingsClient.getDevices();
         const sensorsResponse = await this.airthingsClient.getSensors(SensorUnits.Metric);
-        await devicesResponse.devices.forEach(async (device) => {
+        for (const device of devicesResponse.devices) {
             const deviceSensors = sensorsResponse.results.find(r => r.serialNumber === device.serialNumber);
 
             if (!deviceSensors || !deviceSensors.recorded) {
                 this.log.warn(`No active sensors found for device ${device.name} (${device.serialNumber})!`);
-                return;
+                continue;
             }
 
             const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
