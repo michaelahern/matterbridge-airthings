@@ -12,13 +12,16 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         super(matterbridge, log, config);
         this.log.info('[init]');
 
-        const clientId = process.env.AIRTHINGS_CLIENT_ID;
-        const clientSecret = process.env.AIRTHINGS_CLIENT_SECRET;
+        const clientId = config.clientId as string ?? process.env.AIRTHINGS_CLIENT_ID;
+        const clientSecret = config.clientSecret as string ?? process.env.AIRTHINGS_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
             this.log.error('Must set the AIRTHINGS_CLIENT_ID and AIRTHINGS_CLIENT_SECRET environment variables, exiting...');
             process.exit(1);
         }
+
+        config.clientId = clientId;
+        config.clientSecret = clientSecret;
 
         this.airthingsClient = new AirthingsClient({
             clientId: clientId,
@@ -71,7 +74,8 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
             endpoint.addChildDeviceType('AirQuality', airQualitySensor)
                 .createDefaultAirQualityClusterServer(this.#getAirQuality(deviceSensors))
-                .addClusterServers([TemperatureMeasurement.Cluster.id, RelativeHumidityMeasurement.Cluster.id])
+                .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
+                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined)
                 .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
@@ -121,7 +125,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         };
 
         refreshSensors();
-        this.refreshSensorsInterval = setInterval(refreshSensors, 120 * 1000);
+        this.refreshSensorsInterval = setInterval(refreshSensors, (this.config.refreshInterval as number ?? 120) * 1000);
     }
 
     override async onShutdown(reason?: string) {

@@ -1,6 +1,7 @@
 {
   "name": "matterbridge-airthings",
   "type": "DynamicPlatform",
+  "refreshInterval": 120,
   "debug": false,
   "unregisterOnShutdown": false
 }
