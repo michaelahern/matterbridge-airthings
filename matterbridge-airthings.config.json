@@ -1,0 +1,7 @@
+{
+  "name": "matterbridge-airthings",
+  "type": "DynamicPlatform",
+  "version": "0.1.0",
+  "debug": false,
+  "unregisterOnShutdown": false
+}
