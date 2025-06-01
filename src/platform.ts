@@ -37,15 +37,16 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         for (const device of devicesResponse.devices) {
             const deviceSensors = sensorsResponse.results.find(r => r.serialNumber === device.serialNumber);
 
-            if (!deviceSensors || !deviceSensors.recorded) {
+            if (!deviceSensors) {
                 this.log.warn(`No active sensors found for device ${device.name} (${device.serialNumber})!`);
                 continue;
             }
 
+            const battery = deviceSensors.batteryPercentage;
             const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
             const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity')?.value;
 
-            const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource, temperatureSensor, humiditySensor], { uniqueStorageKey: 'Airthings' }, this.config.debug as boolean)
+            const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource, temperatureSensor, humiditySensor], { uniqueStorageKey: 'Airthings' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
                     device.name,
                     device.serialNumber,
@@ -53,13 +54,13 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     'Airthings',
                     device.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase()),
                     parseInt(this.version.replace(/\D/g, '')),
-                    this.version === '' ? 'Unknown' : this.version,
+                    this.version,
                     parseInt(this.matterbridge.matterbridgeVersion.replace(/\D/g, '')),
                     this.matterbridge.matterbridgeVersion
                 )
-                .createDefaultPowerSourceReplaceableBatteryClusterServer(deviceSensors.batteryPercentage, PowerSource.BatChargeLevel.Ok, 9000, 'AA', 6)
-                .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : null)
-                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : null);
+                .createDefaultPowerSourceReplaceableBatteryClusterServer(battery ? battery * 2 : undefined)
+                .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
+                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined);
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
             await this.registerDevice(endpoint);
@@ -80,7 +81,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
                     const batteryPercentage = device.batteryPercentage;
                     if (batteryPercentage) {
-                        await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage, endpoint.log);
+                        await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage * 2, endpoint.log);
                     }
 
                     const temp = device.sensors.find(s => s.sensorType === 'temp')?.value;
