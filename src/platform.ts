@@ -1,7 +1,7 @@
-import { AirthingsClient, SensorUnits } from 'airthings-consumer-api';
-import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, bridgedNode, humiditySensor, powerSource, temperatureSensor } from 'matterbridge';
+import { AirthingsClient, SensorResult, SensorUnits } from 'airthings-consumer-api';
+import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, airQualitySensor, bridgedNode, humiditySensor, powerSource, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
-import { PowerSource, RelativeHumidityMeasurement, TemperatureMeasurement } from 'matterbridge/matter/clusters';
+import { AirQuality, PowerSource, RelativeHumidityMeasurement, TemperatureMeasurement } from 'matterbridge/matter/clusters';
 
 export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     airthingsClient: AirthingsClient;
@@ -38,7 +38,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const deviceSensors = sensorsResponse.results.find(r => r.serialNumber === device.serialNumber);
 
             if (!deviceSensors) {
-                this.log.warn(`No active sensors found for device ${device.name} (${device.serialNumber})!`);
+                this.log.warn(`No sensors found for device ${device.name} (${device.serialNumber})!`);
                 continue;
             }
 
@@ -46,7 +46,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
             const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity')?.value;
 
-            const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource, temperatureSensor, humiditySensor], { uniqueStorageKey: 'Airthings' + device.serialNumber }, this.config.debug as boolean)
+            const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
                     device.name,
                     device.serialNumber,
@@ -59,8 +59,19 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     this.matterbridge.matterbridgeVersion
                 )
                 .createDefaultPowerSourceReplaceableBatteryClusterServer(battery ? battery * 2 : undefined)
+                .addRequiredClusterServers();
+
+            endpoint.addChildDeviceType('Temperature', temperatureSensor)
                 .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
-                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined);
+                .addRequiredClusterServers();
+
+            endpoint.addChildDeviceType('Humidity', humiditySensor)
+                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined)
+                .addRequiredClusterServers();
+
+            endpoint.addChildDeviceType('AirQuality', airQualitySensor)
+                .createDefaultAirQualityClusterServer(this.#getAirQuality(deviceSensors))
+                .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
             await this.registerDevice(endpoint);
@@ -80,18 +91,25 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     this.log.debug(`Refreshing sensors for ${device.serialNumber}:`, device);
 
                     const batteryPercentage = device.batteryPercentage;
-                    if (batteryPercentage) {
+                    if (batteryPercentage !== undefined) {
                         await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage * 2, endpoint.log);
                     }
 
                     const temp = device.sensors.find(s => s.sensorType === 'temp')?.value;
-                    if (temp) {
-                        await endpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
+                    const tempEndpoint = endpoint.getChildEndpointByName('Temperature');
+                    if (temp !== undefined && tempEndpoint) {
+                        await tempEndpoint.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
                     }
 
                     const humidity = device.sensors.find(s => s.sensorType === 'humidity')?.value;
-                    if (humidity) {
-                        await endpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                    const humidityEndpoint = endpoint.getChildEndpointByName('Humidity');
+                    if (humidity !== undefined && humidityEndpoint) {
+                        await humidityEndpoint.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                    }
+
+                    const airQualityEndpoint = endpoint.getChildEndpointByName('AirQuality');
+                    if (airQualityEndpoint) {
+                        await airQualityEndpoint.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
                     }
                 }
             }
@@ -110,5 +128,76 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         if (this.config.unregisterOnShutdown === true) {
             await this.unregisterAllDevices(500);
         }
+    }
+
+    #getAirQuality(lastResult: SensorResult) {
+        let aq = AirQuality.AirQualityEnum.Unknown;
+
+        const co2Sensor = lastResult.sensors.find(x => x.sensorType === 'co2');
+        if (co2Sensor /* && !this.airthingsConfig.co2AirQualityDisabled */) {
+            if (co2Sensor.value >= 1000) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Poor);
+            }
+            else if (co2Sensor.value >= 800) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Fair);
+            }
+            else {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Good);
+            }
+        }
+
+        const humiditySensor = lastResult.sensors.find(x => x.sensorType === 'humidity');
+        if (humiditySensor /* && !this.airthingsConfig.humidityAirQualityDisabled */) {
+            if (humiditySensor.value < 25 || humiditySensor.value >= 70) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Poor);
+            }
+            else if (humiditySensor.value < 30 || humiditySensor.value >= 60) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Fair);
+            }
+            else {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Good);
+            }
+        }
+
+        const pm25Sensor = lastResult.sensors.find(x => x.sensorType === 'pm25');
+        if (pm25Sensor /* && !this.airthingsConfig.pm25AirQualityDisabled */) {
+            if (pm25Sensor.value >= 25) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Poor);
+            }
+            else if (pm25Sensor.value >= 10) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Fair);
+            }
+            else {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Good);
+            }
+        }
+
+        const radonShortTermAvgSensor = lastResult.sensors.find(x => x.sensorType === 'radonShortTermAvg');
+        if (radonShortTermAvgSensor /* && !this.airthingsConfig.radonAirQualityDisabled */) {
+            if (radonShortTermAvgSensor.value >= 150) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Poor);
+            }
+            else if (radonShortTermAvgSensor.value >= 100) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Fair);
+            }
+            else {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Good);
+            }
+        }
+
+        const vocSensor = lastResult.sensors.find(x => x.sensorType === 'voc');
+        if (vocSensor /* && !this.airthingsConfig.vocAirQualityDisabled */) {
+            if (vocSensor.value >= 2000) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Poor);
+            }
+            else if (vocSensor.value >= 250) {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Fair);
+            }
+            else {
+                aq = Math.max(aq, AirQuality.AirQualityEnum.Good);
+            }
+        }
+
+        return aq;
     }
 }
