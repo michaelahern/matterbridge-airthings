@@ -5,7 +5,8 @@
     "npm-install": "npm install"
   },
   "postStartCommand": {
-    "npm-link": "npm run link"
+    "npm-build": "npm run build",
+    "npm-link": "npm link"
   },
   "portsAttributes": {
     "8283": {
