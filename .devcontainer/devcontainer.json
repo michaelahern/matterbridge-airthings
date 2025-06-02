@@ -5,6 +5,7 @@
     "npm-install": "npm install"
   },
   "postStartCommand": {
+    "npm-build": "npm run build",
     "npm-link": "npm link"
   },
   "portsAttributes": {
