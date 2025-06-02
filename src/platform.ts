@@ -46,13 +46,13 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             }
 
             const battery = deviceSensors.batteryPercentage;
-            const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp')?.value;
-            const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity')?.value;
-            const co2 = deviceSensors.sensors.find(s => s.sensorType === 'co2')?.value;
-            const pm1 = deviceSensors.sensors.find(s => s.sensorType === 'pm1')?.value;
-            const pm25 = deviceSensors.sensors.find(s => s.sensorType === 'pm25')?.value;
-            const radon = deviceSensors.sensors.find(s => s.sensorType === 'radonShortTermAvg')?.value;
-            const voc = deviceSensors.sensors.find(s => s.sensorType === 'voc')?.value;
+            const temp = deviceSensors.sensors.find(s => s.sensorType === 'temp');
+            const humidity = deviceSensors.sensors.find(s => s.sensorType === 'humidity');
+            const co2 = deviceSensors.sensors.find(s => s.sensorType === 'co2');
+            const pm1 = deviceSensors.sensors.find(s => s.sensorType === 'pm1');
+            const pm25 = deviceSensors.sensors.find(s => s.sensorType === 'pm25');
+            const radon = deviceSensors.sensors.find(s => s.sensorType === 'radonShortTermAvg');
+            const voc = deviceSensors.sensors.find(s => s.sensorType === 'voc');
 
             const endpoint = new MatterbridgeEndpoint([bridgedNode, powerSource], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
@@ -66,26 +66,26 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     parseInt(this.matterbridge.matterbridgeVersion.replace(/\D/g, '')),
                     this.matterbridge.matterbridgeVersion
                 )
-                .createDefaultPowerSourceReplaceableBatteryClusterServer(battery ? battery * 2 : undefined)
+                .createDefaultPowerSourceReplaceableBatteryClusterServer(battery !== undefined ? battery * 2 : undefined)
                 .addRequiredClusterServers();
 
             endpoint.addChildDeviceType('Temperature', temperatureSensor)
-                .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
+                .createDefaultTemperatureMeasurementClusterServer(temp ? temp.value * 100 : undefined)
                 .addRequiredClusterServers();
 
             endpoint.addChildDeviceType('Humidity', humiditySensor)
-                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined)
+                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity.value * 100 : undefined)
                 .addRequiredClusterServers();
 
             endpoint.addChildDeviceType('AirQuality', airQualitySensor)
                 .createDefaultAirQualityClusterServer(this.#getAirQuality(deviceSensors))
-                .createDefaultTemperatureMeasurementClusterServer(temp ? temp * 100 : undefined)
-                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity * 100 : undefined)
-                .createDefaultCarbonDioxideConcentrationMeasurementClusterServer(co2, ConcentrationMeasurement.MeasurementUnit.Ppm, ConcentrationMeasurement.MeasurementMedium.Air)
-                .createDefaultPm1ConcentrationMeasurementClusterServer(pm1, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
-                .createDefaultPm25ConcentrationMeasurementClusterServer(pm25, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
-                .createDefaultRadonConcentrationMeasurementClusterServer(radon, ConcentrationMeasurement.MeasurementUnit.Bqm3, ConcentrationMeasurement.MeasurementMedium.Air)
-                .createDefaultTvocMeasurementClusterServer(voc ? Math.round(voc * 2.2727) : undefined, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultTemperatureMeasurementClusterServer(temp ? temp.value * 100 : undefined)
+                .createDefaultRelativeHumidityMeasurementClusterServer(humidity ? humidity.value * 100 : undefined)
+                .createDefaultCarbonDioxideConcentrationMeasurementClusterServer(co2?.value, ConcentrationMeasurement.MeasurementUnit.Ppm, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultPm1ConcentrationMeasurementClusterServer(pm1?.value, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultPm25ConcentrationMeasurementClusterServer(pm25?.value, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultRadonConcentrationMeasurementClusterServer(radon?.value, ConcentrationMeasurement.MeasurementUnit.Bqm3, ConcentrationMeasurement.MeasurementMedium.Air)
+                .createDefaultTvocMeasurementClusterServer(voc ? Math.round(voc.value * 2.2727) : undefined, ConcentrationMeasurement.MeasurementUnit.Ugm3, ConcentrationMeasurement.MeasurementMedium.Air)
                 .addRequiredClusterServers();
 
             this.setSelectDevice(device.serialNumber, device.name, undefined, 'hub');
@@ -105,55 +105,51 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                 if (endpoint) {
                     this.log.debug(`Refreshing sensors for ${device.serialNumber}:`, device);
 
+                    const airQualityEndpoint = endpoint.getChildEndpointByName('AirQuality');
+                    await airQualityEndpoint?.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
+
                     const batteryPercentage = device.batteryPercentage;
                     if (batteryPercentage !== undefined) {
                         await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage * 2, endpoint.log);
                     }
 
-                    const temp = device.sensors.find(s => s.sensorType === 'temp')?.value;
-                    if (temp !== undefined) {
+                    const temp = device.sensors.find(s => s.sensorType === 'temp');
+                    if (temp) {
                         const tempEndpoint = endpoint.getChildEndpointByName('Temperature');
-                        await tempEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
+                        await tempEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp.value * 100, endpoint.log);
+                        await airQualityEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp.value * 100, endpoint.log);
                     }
 
-                    const humidity = device.sensors.find(s => s.sensorType === 'humidity')?.value;
-                    if (humidity !== undefined) {
+                    const humidity = device.sensors.find(s => s.sensorType === 'humidity');
+                    if (humidity) {
                         const humidityEndpoint = endpoint.getChildEndpointByName('Humidity');
-                        await humidityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                        await humidityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity.value * 100, endpoint.log);
+                        await airQualityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity.value * 100, endpoint.log);
                     }
 
-                    const airQualityEndpoint = endpoint.getChildEndpointByName('AirQuality');
-                    await airQualityEndpoint?.setAttribute(AirQuality.Cluster.id, 'airQuality', this.#getAirQuality(device), endpoint.log);
-                    if (temp !== undefined) {
-                        await airQualityEndpoint?.setAttribute(TemperatureMeasurement.Cluster.id, 'measuredValue', temp * 100, endpoint.log);
-                    }
-                    if (humidity !== undefined) {
-                        await airQualityEndpoint?.setAttribute(RelativeHumidityMeasurement.Cluster.id, 'measuredValue', humidity * 100, endpoint.log);
+                    const co2 = device.sensors.find(s => s.sensorType === 'co2');
+                    if (co2) {
+                        await airQualityEndpoint?.setAttribute(CarbonDioxideConcentrationMeasurement.Cluster.id, 'measuredValue', co2.value, endpoint.log);
                     }
 
-                    const co2 = device.sensors.find(s => s.sensorType === 'co2')?.value;
-                    if (co2 !== undefined) {
-                        await airQualityEndpoint?.setAttribute(CarbonDioxideConcentrationMeasurement.Cluster.id, 'measuredValue', co2, endpoint.log);
+                    const pm1 = device.sensors.find(s => s.sensorType === 'pm1');
+                    if (pm1) {
+                        await airQualityEndpoint?.setAttribute(Pm1ConcentrationMeasurement.Cluster.id, 'measuredValue', pm1.value, endpoint.log);
                     }
 
-                    const pm1 = device.sensors.find(s => s.sensorType === 'pm1')?.value;
-                    if (pm1 !== undefined) {
-                        await airQualityEndpoint?.setAttribute(Pm1ConcentrationMeasurement.Cluster.id, 'measuredValue', pm1, endpoint.log);
+                    const pm25 = device.sensors.find(s => s.sensorType === 'pm25');
+                    if (pm25) {
+                        await airQualityEndpoint?.setAttribute(Pm25ConcentrationMeasurement.Cluster.id, 'measuredValue', pm25.value, endpoint.log);
                     }
 
-                    const pm25 = device.sensors.find(s => s.sensorType === 'pm25')?.value;
-                    if (pm25 !== undefined) {
-                        await airQualityEndpoint?.setAttribute(Pm25ConcentrationMeasurement.Cluster.id, 'measuredValue', pm25, endpoint.log);
+                    const radon = device.sensors.find(s => s.sensorType === 'radonShortTermAvg');
+                    if (radon) {
+                        await airQualityEndpoint?.setAttribute(RadonConcentrationMeasurement.Cluster.id, 'measuredValue', radon.value, endpoint.log);
                     }
 
-                    const radon = device.sensors.find(s => s.sensorType === 'radonShortTermAvg')?.value;
-                    if (radon !== undefined) {
-                        await airQualityEndpoint?.setAttribute(RadonConcentrationMeasurement.Cluster.id, 'measuredValue', radon, endpoint.log);
-                    }
-
-                    const voc = device.sensors.find(s => s.sensorType === 'voc')?.value;
-                    if (voc !== undefined) {
-                        await airQualityEndpoint?.setAttribute(TotalVolatileOrganicCompoundsConcentrationMeasurement.Cluster.id, 'measuredValue', Math.round(voc * 2.2727), endpoint.log);
+                    const voc = device.sensors.find(s => s.sensorType === 'voc');
+                    if (voc) {
+                        await airQualityEndpoint?.setAttribute(TotalVolatileOrganicCompoundsConcentrationMeasurement.Cluster.id, 'measuredValue', Math.round(voc.value * 2.2727), endpoint.log);
                     }
                 }
             }
