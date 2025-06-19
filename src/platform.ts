@@ -11,15 +11,14 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
     constructor(matterbridge: Matterbridge, log: AnsiLogger, config: PlatformConfig) {
         super(matterbridge, log, config);
-        this.log.info('[init]');
 
         const clientId = config.clientId as string ?? process.env.AIRTHINGS_CLIENT_ID;
         const clientSecret = config.clientSecret as string ?? process.env.AIRTHINGS_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
             this.log.error('Missing Airthings Client ID and Secret!');
-            this.log.error('  - Platform Config Props: clientId & clientSecret');
-            this.log.error('  - Environment Variables: AIRTHINGS_CLIENT_ID & AIRTHINGS_CLIENT_SECRET');
+            this.log.error(' - Platform Config Props: clientId & clientSecret');
+            this.log.error(' - Environment Variables: AIRTHINGS_CLIENT_ID & AIRTHINGS_CLIENT_SECRET');
         }
         else {
             config.clientId = clientId;
@@ -61,7 +60,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const radon = deviceSensors.sensors.find(s => s.sensorType === 'radonShortTermAvg');
             const voc = deviceSensors.sensors.find(s => s.sensorType === 'voc');
 
-            const endpoint = new MatterbridgeEndpoint([airQualitySensor, bridgedNode], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
+            const endpoint = new MatterbridgeEndpoint([bridgedNode], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
                     device.name,
                     device.serialNumber,
@@ -73,8 +72,12 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     parseInt(this.matterbridge.matterbridgeVersion.replace(/\D/g, '')),
                     this.matterbridge.matterbridgeVersion
                 )
-                .createDefaultPowerSourceReplaceableBatteryClusterServer(battery !== undefined ? battery * 2 : undefined, PowerSource.BatChargeLevel.Ok)
+                .createDefaultPowerSourceRechargeableBatteryClusterServer(
+                    battery !== undefined ? battery * 2 : undefined,
+                    battery !== undefined && battery > 20 ? PowerSource.BatChargeLevel.Ok : PowerSource.BatChargeLevel.Warning)
                 .addRequiredClusterServers();
+
+            endpoint.name = `Airthings ${device.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}`;
 
             endpoint.addChildDeviceType('Temperature', temperatureSensor)
                 .createDefaultTemperatureMeasurementClusterServer(temp ? temp.value * 100 : undefined)
@@ -121,6 +124,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                     const batteryPercentage = device.batteryPercentage;
                     if (batteryPercentage !== undefined) {
                         await endpoint.setAttribute(PowerSource.Cluster.id, 'batPercentRemaining', batteryPercentage * 2, endpoint.log);
+                        await endpoint.setAttribute(PowerSource.Cluster.id, 'batChargeLevel', batteryPercentage > 20 ? PowerSource.BatChargeLevel.Ok : PowerSource.BatChargeLevel.Warning, endpoint.log);
                     }
 
                     const temp = device.sensors.find(s => s.sensorType === 'temp');
