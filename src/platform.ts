@@ -5,7 +5,7 @@ import { AirQualityServer } from 'matterbridge/matter/behaviors';
 import { AirQuality, CarbonDioxideConcentrationMeasurement, ConcentrationMeasurement, Pm1ConcentrationMeasurement, Pm25ConcentrationMeasurement, PowerSource, RadonConcentrationMeasurement, RelativeHumidityMeasurement, TemperatureMeasurement, TotalVolatileOrganicCompoundsConcentrationMeasurement } from 'matterbridge/matter/clusters';
 
 export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
-    airthingsClient: AirthingsClient;
+    airthingsClient?: AirthingsClient;
     bridgedDevices = new Map<string, MatterbridgeEndpoint>();
     refreshSensorsInterval: NodeJS.Timeout | undefined;
 
@@ -17,20 +17,26 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         const clientSecret = config.clientSecret as string ?? process.env.AIRTHINGS_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            this.log.error('Must set the AIRTHINGS_CLIENT_ID and AIRTHINGS_CLIENT_SECRET environment variables, exiting...');
-            process.exit(1);
+            this.log.error('Missing Airthings Client ID and Secret!');
+            this.log.error('  - Platform Config Props: clientId & clientSecret');
+            this.log.error('  - Environment Variables: AIRTHINGS_CLIENT_ID & AIRTHINGS_CLIENT_SECRET');
         }
+        else {
+            config.clientId = clientId;
+            config.clientSecret = clientSecret;
 
-        config.clientId = clientId;
-        config.clientSecret = clientSecret;
-
-        this.airthingsClient = new AirthingsClient({
-            clientId: clientId,
-            clientSecret: clientSecret
-        });
+            this.airthingsClient = new AirthingsClient({
+                clientId: clientId,
+                clientSecret: clientSecret
+            });
+        }
     }
 
     override async onStart(reason?: string) {
+        if (!this.airthingsClient) {
+            return;
+        };
+
         this.log.info('[onStart]', reason);
 
         await this.ready;
@@ -95,9 +101,12 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 
     override async onConfigure() {
         await super.onConfigure();
-        this.log.info('[onConfigure]');
 
         const refreshSensors = async () => {
+            if (!this.airthingsClient) {
+                return;
+            };
+
             const airthingsSensors = await this.airthingsClient.getSensors(SensorUnits.Metric);
             for (const device of airthingsSensors.results) {
                 const endpoint = this.bridgedDevices.get(device.serialNumber);
