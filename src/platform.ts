@@ -34,7 +34,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     override async onStart(reason?: string) {
         if (!this.airthingsClient) {
             return;
-        };
+        }
 
         this.log.info('[onStart]', reason);
 
