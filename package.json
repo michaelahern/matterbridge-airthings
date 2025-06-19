@@ -1,7 +1,7 @@
 {
   "name": "matterbridge-airthings",
   "displayName": "Matterbridge Airthings",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Airthings Matterbridge Plugin",
   "keywords": [
     "airthings",
@@ -32,7 +32,7 @@
     "url": "git://github.com/michaelahern/matterbridge-airthings.git"
   },
   "scripts": {
-    "build": "npm run clean && npm run lint && npm link matterbridge && tsc",
+    "build": "npm run lint && npm link matterbridge && tsc",
     "clean": "rimraf ./dist",
     "matterbridge": "matterbridge -bridge",
     "lint": "eslint src/**/*.ts --max-warnings=0",
@@ -51,7 +51,7 @@
     "typescript-eslint": "^8"
   },
   "engines": {
-    "matterbridge": ">=3.0.4",
+    "matterbridge": ">=3",
     "node": ">=20"
   }
 }
