@@ -1,5 +1,14 @@
 {
   "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bierner.markdown-preview-github-styles",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions"
+      ]
+    }
+  },
   "updateContentCommand": {
     "matterbridge-install": "npm install -g matterbridge",
     "npm-install": "npm install"
