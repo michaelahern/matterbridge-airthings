@@ -16,7 +16,8 @@
   "license": "ISC",
   "author": "Michael Ahern <michael.ahern@gmail.com>",
   "files": [
-    "./dist"
+    "./dist",
+    "./matterbridge-airthings.schema.json"
   ],
   "type": "module",
   "exports": {
@@ -34,7 +35,7 @@
   "scripts": {
     "build": "npm run lint && npm link matterbridge && tsc",
     "clean": "rimraf ./dist",
-    "matterbridge": "matterbridge -bridge",
+    "matterbridge": "matterbridge -add matterbridge-airthings && matterbridge -bridge",
     "lint": "eslint src/**/*.ts --max-warnings=0",
     "lint-fix": "eslint src/**/*.ts --max-warnings=0 --fix",
     "prepublishOnly": "npm run build"
