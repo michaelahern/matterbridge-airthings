@@ -44,7 +44,7 @@
     "airthings-consumer-api": "^1"
   },
   "devDependencies": {
-    "@stylistic/eslint-plugin": "^4",
+    "@stylistic/eslint-plugin": "^5",
     "@types/node": "^20",
     "eslint": "^9",
     "rimraf": "^6",
@@ -52,7 +52,7 @@
     "typescript-eslint": "^8"
   },
   "engines": {
-    "matterbridge": ">=3",
+    "matterbridge": ">=3.1",
     "node": ">=20"
   }
 }
