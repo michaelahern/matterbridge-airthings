@@ -2,7 +2,10 @@
   "title": "matterbridge-airthings",
   "description": "matterbridge-airthings",
   "type": "object",
-  "required": [],
+  "required": [
+    "clientId",
+    "clientSecret"
+  ],
   "properties": {
     "name": {
       "description": "Plugin Name",
@@ -30,14 +33,15 @@
       "default": 120
     },
     "debug": {
-      "description": "Enable the debug for the plugin (development only)",
+      "description": "Enable debug logging for the plugin (development only)",
       "type": "boolean",
       "default": false
     },
     "unregisterOnShutdown": {
       "description": "Unregister all devices on shutdown (development only)",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "ui:widget": "hidden"
     }
   }
 }

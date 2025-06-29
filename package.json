@@ -16,7 +16,8 @@
   "license": "ISC",
   "author": "Michael Ahern <michael.ahern@gmail.com>",
   "files": [
-    "./dist"
+    "./dist",
+    "./matterbridge-airthings.schema.json"
   ],
   "type": "module",
   "exports": {
