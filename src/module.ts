@@ -1,4 +1,4 @@
-import { Matterbridge, PlatformConfig } from 'matterbridge';
+import { Matterbridge, type PlatformConfig } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
 import { AirthingsPlatform } from './platform.js';
 
