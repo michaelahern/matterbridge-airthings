@@ -1,15 +1,15 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "node-terminal",
-            "request": "launch",
-            "name": "matterbridge",
-            "preLaunchTask": "npm: build",
-            "command": "npm run matterbridge",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "matterbridge",
+      "preLaunchTask": "npm: build",
+      "command": "npm run matterbridge",
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    }
+  ]
 }

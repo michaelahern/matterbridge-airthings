@@ -23,5 +23,7 @@
       "onAutoForward": "openBrowser"
     }
   },
-  "forwardPorts": [8283]
+  "forwardPorts": [
+    8283
+  ]
 }
