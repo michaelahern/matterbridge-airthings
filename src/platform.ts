@@ -1,5 +1,5 @@
-import { AirthingsClient, SensorResult, SensorUnits } from 'airthings-consumer-api';
-import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, PlatformConfig, airQualitySensor, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
+import { AirthingsClient, type SensorResult, SensorUnits } from 'airthings-consumer-api';
+import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, type PlatformConfig, airQualitySensor, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
 import { AirQualityServer } from 'matterbridge/matter/behaviors';
 import { AirQuality, CarbonDioxideConcentrationMeasurement, ConcentrationMeasurement, Pm1ConcentrationMeasurement, Pm25ConcentrationMeasurement, PowerSource, RadonConcentrationMeasurement, RelativeHumidityMeasurement, TemperatureMeasurement, TotalVolatileOrganicCompoundsConcentrationMeasurement } from 'matterbridge/matter/clusters';
