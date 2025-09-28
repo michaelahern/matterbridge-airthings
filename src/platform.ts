@@ -253,8 +253,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
 }
 
 MatterbridgeEndpoint.prototype.createDefaultAirQualityClusterServer = function (airQuality = AirQuality.AirQualityEnum.Unknown): MatterbridgeEndpoint {
-    this.behaviors.require(AirQualityServer.with(AirQuality.Feature.Fair), {
-        airQuality
-    });
+    // @ts-expect-error exactOptionalPropertyTypes
+    this.behaviors.require(AirQualityServer.with(AirQuality.Feature.Fair), { airQuality });
     return this;
 };
