@@ -1,5 +1,5 @@
 import { AirthingsClient, type SensorResult, SensorUnits } from 'airthings-consumer-api';
-import { Matterbridge, MatterbridgeEndpoint, MatterbridgeDynamicPlatform, type PlatformConfig, airQualitySensor, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
+import { MatterbridgeEndpoint, MatterbridgeDynamicPlatform, type PlatformConfig, type PlatformMatterbridge, airQualitySensor, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
 import { AirQualityServer } from 'matterbridge/matter/behaviors';
 import { AirQuality, CarbonDioxideConcentrationMeasurement, ConcentrationMeasurement, Pm1ConcentrationMeasurement, Pm25ConcentrationMeasurement, PowerSource, RadonConcentrationMeasurement, RelativeHumidityMeasurement, TemperatureMeasurement, TotalVolatileOrganicCompoundsConcentrationMeasurement } from 'matterbridge/matter/clusters';
@@ -9,7 +9,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
     bridgedDevices = new Map<string, MatterbridgeEndpoint>();
     refreshSensorsInterval: NodeJS.Timeout | undefined;
 
-    constructor(matterbridge: Matterbridge, log: AnsiLogger, config: PlatformConfig) {
+    constructor(matterbridge: PlatformMatterbridge, log: AnsiLogger, config: PlatformConfig) {
         super(matterbridge, log, config);
 
         const clientId = config.clientId as string ?? process.env.AIRTHINGS_CLIENT_ID;
@@ -60,7 +60,7 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             const radon = deviceSensors.sensors.find(s => s.sensorType === 'radonShortTermAvg');
             const voc = deviceSensors.sensors.find(s => s.sensorType === 'voc');
 
-            const endpoint = new MatterbridgeEndpoint([bridgedNode], { uniqueStorageKey: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
+            const endpoint = new MatterbridgeEndpoint([bridgedNode], { id: 'Airthings-' + device.serialNumber }, this.config.debug as boolean)
                 .createDefaultBridgedDeviceBasicInformationClusterServer(
                     device.name,
                     device.serialNumber,
