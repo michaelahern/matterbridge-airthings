@@ -51,6 +51,7 @@
     "eslint": "^9",
     "eslint-plugin-jsonc": "^2",
     "eslint-plugin-yml": "^1",
+    "matterbridge": "^3.7.0",
     "rimraf": "^6",
     "typescript": "~5.9",
     "typescript-eslint": "^8"
