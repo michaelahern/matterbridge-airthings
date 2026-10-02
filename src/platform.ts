@@ -165,8 +165,12 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
             }
         };
 
-        refreshSensors();
-        this.refreshSensorsInterval = setInterval(refreshSensors, (this.config.refreshInterval as number ?? 120) * 1000);
+        const refreshSensorsAndLogErrors = () => {
+            refreshSensors().catch((error: unknown) => this.log.error('Failed to refresh sensors:', error));
+        };
+
+        refreshSensorsAndLogErrors();
+        this.refreshSensorsInterval = setInterval(refreshSensorsAndLogErrors, (this.config.refreshInterval as number ?? 120) * 1000);
     }
 
     override async onShutdown(reason?: string) {
