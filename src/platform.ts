@@ -1,7 +1,6 @@
 import { AirthingsClient, type SensorResult, SensorUnits } from 'airthings-consumer-api';
 import { MatterbridgeEndpoint, MatterbridgeDynamicPlatform, type PlatformConfig, type PlatformMatterbridge, airQualitySensor, bridgedNode, humiditySensor, temperatureSensor } from 'matterbridge';
 import { AnsiLogger } from 'matterbridge/logger';
-import { AirQualityServer } from 'matterbridge/matter/behaviors';
 import { AirQuality, CarbonDioxideConcentrationMeasurement, ConcentrationMeasurement, Pm1ConcentrationMeasurement, Pm25ConcentrationMeasurement, PowerSource, RadonConcentrationMeasurement, RelativeHumidityMeasurement, TemperatureMeasurement, TotalVolatileOrganicCompoundsConcentrationMeasurement } from 'matterbridge/matter/clusters';
 
 export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
@@ -256,8 +255,3 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
         return aq;
     }
 }
-
-MatterbridgeEndpoint.prototype.createDefaultAirQualityClusterServer = function (airQuality = AirQuality.AirQualityEnum.Unknown): MatterbridgeEndpoint {
-    this.behaviors.require(AirQualityServer.with(AirQuality.Feature.Fair), { airQuality });
-    return this;
-};
