@@ -74,7 +74,8 @@ export class AirthingsPlatform extends MatterbridgeDynamicPlatform {
                 )
                 .createDefaultPowerSourceRechargeableBatteryClusterServer(
                     battery !== undefined ? battery * 2 : undefined,
-                    battery !== undefined && battery > 20 ? PowerSource.BatChargeLevel.Ok : PowerSource.BatChargeLevel.Warning)
+                    battery !== undefined && battery > 20 ? PowerSource.BatChargeLevel.Ok : PowerSource.BatChargeLevel.Warning
+                )
                 .addRequiredClusterServers();
 
             endpoint.name = `Airthings ${device.type.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase())}`;

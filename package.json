@@ -45,9 +45,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10",
-    "@eslint/json": "^1",
-    "@eslint/markdown": "^8",
-    "@stylistic/eslint-plugin": "^5",
+    "@eslint/json": "^2",
+    "@eslint/markdown": "^9",
+    "@stylistic/eslint-plugin": "^6",
     "@types/node": "^22",
     "eslint": "^10",
     "eslint-plugin-jsonc": "^3",
@@ -57,7 +57,7 @@
     "typescript-eslint": "^8"
   },
   "engines": {
-    "matterbridge": ">=3.7.0",
+    "matterbridge": ">=3.11.0",
     "node": ">=22"
   }
 }
